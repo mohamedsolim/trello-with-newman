@@ -14,21 +14,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "22"
 
       - name: Install Newman
-        run: npm install -g newman
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
 
-      - name: Install htmlextra
-        run: npm install -g newman-reporter-htmlextra
+      - name: Create Reports Directory
+        run: mkdir -p newman
 
       - name: Run Newman Collection
         run: |
-          newman run TRELLO.postman_collection.json -r "cli,json,junit,htmlextra" \
-          --global-var "TRELLO_API_KEY=${{ secrets.TRELLO_API_KEY }}" \
-          --global-var "TRELLO_API_TOKEN=${{ secrets.TRELLO_API_TOKEN }}"
+          newman run TRELLO.postman_collection.json \
+            -r cli,json,junit,htmlextra \
+            --reporter-json-export newman/report.json \
+            --reporter-junit-export newman/report.xml \
+            --reporter-htmlextra-export newman/report.html \
+            --global-var "TRELLO_API_KEY=${{ secrets.TRELLO_API_KEY }}" \
+            --global-var "TRELLO_API_TOKEN=${{ secrets.TRELLO_API_TOKEN }}"
 
-      - uses:  actions/upload-artifact@v2
-        with: 
-              name: newman-reports
-              path: ./newman
+      - name: Upload Newman Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-reports
+          path: newman/
